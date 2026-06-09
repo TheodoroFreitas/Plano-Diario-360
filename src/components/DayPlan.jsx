@@ -18,6 +18,7 @@ import DevotionalSection from "./DevotionalSection";
 import FilterBar from "./FilterBar";
 import NutritionSection from "./NutritionSection";
 import ScheduleSection from "./ScheduleSection";
+import SmartPlanner from "./SmartPlanner";
 import StudySection from "./StudySection";
 import TasksSection from "./TasksSection";
 import WorkoutSection from "./WorkoutSection";
@@ -69,6 +70,12 @@ function DayPlan({ date, onBack, onOpenToday }) {
 
   function patchPlan(fields) {
     setPlan((current) => ({ ...current, ...fields }));
+  }
+
+  function applySmartPlan(nextPlan) {
+    setPlan(nextPlan);
+    setNotice("Rotina criada pelo assistente. Revise e clique em Salvar tudo para gravar no Firebase.");
+    setFilter("all");
   }
 
   function showSection(section) {
@@ -142,6 +149,8 @@ function DayPlan({ date, onBack, onOpenToday }) {
       <FilterBar value={filter} onChange={setFilter} />
 
       <div className="sections-stack">
+        {filter === "all" && <SmartPlanner plan={plan} onApply={applySmartPlan} />}
+
         {showSection("schedule") && (
           <ScheduleSection
             items={plan.schedule}

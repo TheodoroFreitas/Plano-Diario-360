@@ -127,11 +127,15 @@ Campos principais:
 - Dashboard com saudação, data atual e resumo do dia.
 - Calendário mensal com indicadores por categoria.
 - Criação e edição de plano para qualquer data.
+- Assistente do dia com modelos automáticos de rotina.
+- Criação rápida de tarefas por texto, prioridade e área.
+- Modelos prontos para tarefas recorrentes.
 - CRUD de blocos de horário, refeições, estudos e tarefas.
 - Seções editáveis para devocional, treino e revisão do dia.
 - Cálculo automático do percentual de acertos nos estudos.
 - Filtros por categoria, pendentes e concluídos.
 - Modo claro/escuro.
+- Animações e microinterações para facilitar a leitura visual.
 - Tratamento básico de carregamento e erros.
 
 ## Próximos passos sugeridos

@@ -11,6 +11,51 @@ const emptyTask = {
   note: "",
 };
 
+const taskTemplates = [
+  {
+    title: "Fazer devocional",
+    description: "Leitura, oração e aplicação prática.",
+    area: "igreja",
+    priority: "alta",
+    optionalTime: "06:30",
+  },
+  {
+    title: "Beber água",
+    description: "Manter hidratação e marcar o checklist.",
+    area: "pessoal",
+    priority: "média",
+    optionalTime: "",
+  },
+  {
+    title: "Resolver questões do concurso",
+    description: "Criar ou atualizar bloco em Estudo Concurso.",
+    area: "projeto",
+    priority: "alta",
+    optionalTime: "20:00",
+  },
+  {
+    title: "Preparar refeição do plano",
+    description: "Deixar comida simples pronta para evitar improviso.",
+    area: "casa",
+    priority: "média",
+    optionalTime: "",
+  },
+  {
+    title: "Treinar ou fazer alongamento",
+    description: "Ajustar intensidade conforme sono e energia.",
+    area: "pessoal",
+    priority: "média",
+    optionalTime: "18:30",
+  },
+  {
+    title: "Revisar o dia",
+    description: "Registrar o que funcionou, falhou e o ajuste de amanhã.",
+    area: "pessoal",
+    priority: "baixa",
+    optionalTime: "21:30",
+  },
+];
+
 function matchesExternalStatus(task, statusFilter) {
   if (statusFilter === "completed") return task.status === "concluído";
   if (statusFilter === "pending") return task.status !== "concluído";
@@ -20,8 +65,27 @@ function matchesExternalStatus(task, statusFilter) {
 function TasksSection({ tasks, onChange, onSave, saving, statusFilter }) {
   const [form, setForm] = useState(emptyTask);
   const [editingId, setEditingId] = useState("");
+  const [quickTitle, setQuickTitle] = useState("");
+  const [quickPriority, setQuickPriority] = useState("média");
+  const [quickArea, setQuickArea] = useState("pessoal");
   const [statusLocalFilter, setStatusLocalFilter] = useState("todos");
   const [priorityFilter, setPriorityFilter] = useState("todas");
+
+  const stats = useMemo(() => {
+    const completed = tasks.filter((task) => task.status === "concluído").length;
+    const highPriority = tasks.filter(
+      (task) => task.priority === "alta" && task.status !== "concluído",
+    ).length;
+    const progress = tasks.length ? Math.round((completed / tasks.length) * 100) : 0;
+
+    return {
+      total: tasks.length,
+      completed,
+      pending: tasks.length - completed,
+      highPriority,
+      progress,
+    };
+  }, [tasks]);
 
   const visibleTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -36,6 +100,44 @@ function TasksSection({ tasks, onChange, onSave, saving, statusFilter }) {
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function createTask(data) {
+    const payload = {
+      ...emptyTask,
+      ...data,
+      id: makeId("task"),
+      title: data.title.trim(),
+      status: data.status || "a fazer",
+    };
+
+    onChange([...tasks, payload]);
+  }
+
+  function addQuickTask(event) {
+    event.preventDefault();
+    if (!quickTitle.trim()) return;
+
+    createTask({
+      title: quickTitle,
+      description: "Criada pela entrada rápida.",
+      area: quickArea,
+      priority: quickPriority,
+    });
+    setQuickTitle("");
+  }
+
+  function addTemplate(template) {
+    const exists = tasks.some(
+      (task) => task.title.trim().toLowerCase() === template.title.trim().toLowerCase(),
+    );
+
+    if (exists) return;
+
+    createTask({
+      ...template,
+      note: "Criada por modelo rápido.",
+    });
   }
 
   function submit(event) {
@@ -88,6 +190,76 @@ function TasksSection({ tasks, onChange, onSave, saving, statusFilter }) {
         <button className="button primary" onClick={onSave} disabled={saving} type="button">
           {saving ? "Salvando..." : "Salvar tarefas"}
         </button>
+      </div>
+
+      <div className="task-command-center">
+        <div className="task-stat-card">
+          <span>{stats.progress}%</span>
+          <small>concluído</small>
+        </div>
+        <div className="task-stat-card">
+          <span>{stats.pending}</span>
+          <small>pendentes</small>
+        </div>
+        <div className="task-stat-card warning">
+          <span>{stats.highPriority}</span>
+          <small>alta prioridade</small>
+        </div>
+      </div>
+
+      <form className="quick-task-form" onSubmit={addQuickTask}>
+        <label className="quick-input-label">
+          Criar tarefa rápida
+          <input
+            value={quickTitle}
+            onChange={(event) => setQuickTitle(event.target.value)}
+            placeholder="Digite uma tarefa e aperte Enter"
+          />
+        </label>
+        <select value={quickArea} onChange={(event) => setQuickArea(event.target.value)}>
+          <option value="pessoal">Pessoal</option>
+          <option value="trabalho">Trabalho</option>
+          <option value="casa">Casa</option>
+          <option value="financeiro">Financeiro</option>
+          <option value="projeto">Projeto</option>
+          <option value="igreja">Igreja</option>
+          <option value="outros">Outros</option>
+        </select>
+        <div className="priority-switch" aria-label="Prioridade da tarefa rápida">
+          {["baixa", "média", "alta"].map((priority) => (
+            <button
+              className={quickPriority === priority ? "priority-button active" : "priority-button"}
+              key={priority}
+              onClick={() => setQuickPriority(priority)}
+              type="button"
+            >
+              {priority}
+            </button>
+          ))}
+        </div>
+        <button className="button accent" type="submit">
+          Criar
+        </button>
+      </form>
+
+      <div className="template-strip" aria-label="Modelos rápidos de tarefas">
+        {taskTemplates.map((template) => {
+          const alreadyAdded = tasks.some(
+            (task) => task.title.trim().toLowerCase() === template.title.trim().toLowerCase(),
+          );
+
+          return (
+            <button
+              className={alreadyAdded ? "template-chip added" : "template-chip"}
+              disabled={alreadyAdded}
+              key={template.title}
+              onClick={() => addTemplate(template)}
+              type="button"
+            >
+              {alreadyAdded ? "Adicionado" : template.title}
+            </button>
+          );
+        })}
       </div>
 
       <form className="form-grid" onSubmit={submit}>
